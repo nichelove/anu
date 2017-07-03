@@ -23,128 +23,57 @@
      <script src="./test/react-dom.js"></script> -->
    <script src="./libs/babel.js"></script>
     <script type='text/babel'>
-//var ReactDOM = React
-       class A extends React.Component{
-           constructor(props){
-               super(props)
-               this.state = {
-                   aaa: 1
-               }
-           }
-           componentWillMount(){
-              console.log('A will mount')
-               this.setState({
-                   aaa: 111
-               })
-           }
-            componentDidMount(){
-              console.log('A did mount')
-           }
-           componentWillUpdate(){
-              console.log('A will change')
-           }
-           render(){
-               return <strong ref={(a)=>{console.log('A的内部',a)}}  >A内容{this.state.aaa}<B /></strong>
-           }
-       }
-      class B extends React.Component{
-           constructor(props){
-               super(props)
-               this.state = {
-                   aaa: 2
-               }
-           }
-           componentWillMount(){
-               console.log('B will mount')
-               this.setState({
-                   aaa: 222
-               })
-           }
-          componentDidMount(){
-               console.log('B did mount 开始')
-               console.log(this.state.aaa,'B 1次')
-               this.setState({
-                   aaa: 2222
-               },function(a){
-                   console.log('这是回调',a, this)
-               })
-               console.log(this.state.aaa,'B 2次')
-               console.log('B did mount 结束')
-           }
-           componentWillUpdate(){
-              console.log('B will change')
-           }
-           render(){
-               return <strong>{this.state.aaa}</strong>
-           }
-       }
-        class C extends React.Component{
-           constructor(props){
-               super(props)
-               this.state = {
-                   aaa: 3
-               }
-           }
-           componentWillMount(){
-              console.log('C will mount')
-               this.setState({
-                   aaa: 333
-               })
-           }
-            componentDidMount(){
-              console.log('C did mount')
-           }
-            componentDidUpdate(){
-              console.log('C did update')
-           }
-           onclick(){
-               console.log('执行点击事件')
-               this.setState({
-                   aaa: new Date - 0
-               })
-           }
-           render(){
-               return <span onClick={this.onclick.bind(this)} ref={(a)=>{console.log(a, 'ref C')}}>{this.state.aaa}<D /></span>
-           }
-       }
-        class D extends React.Component{
-           constructor(props){
-               super(props)
-               this.state = {
-                   aaa: 4
-               }
-           }
-           componentWillMount(){
-              console.log('D will mount')
-               this.setState({
-                   aaa: 444
-               })
-           }
-            componentDidMount(){
-              console.log('D did mount')
-           }
-            componentDidUpdate(){
-              console.log('D did update')
-           }
-           render(){
-               return <span  ref={(a)=>{console.log(a, 'ref D')}}>{this.state.aaa}</span>
-           }
-       }
-  
-       
-       class App extends React.Component{
-            click(){
-                length = 7
-                length2 = 5
-                this.forceUpdate()
+ var str = ''
+        class Component1 extends React.Component {
+            componentWillUnmount() {
+                str += 'xxxx'
             }
-            render(){
-               return <div><A ref={(a)=>{console.log(a)}}/><div ref={()=>{console.log('1.1 A ref')}}><div ref={()=>{console.log('1.2 A ref')}}>AC之间</div></div><C /><div ref={()=>{console.log('执行aaa ref')}} >xxxx</div></div>
-           }
-       }
+            render() {
+                return <div className="component1">{this.props.children}</div>
+            }
+        }
+        class Component2 extends React.Component {
+            componentWillUnmount() {
+                str += ' yyyy'
+            }
+            render() {
+                return <div className="component2">xxx</div>
+            }
+        }
+        var index = 1
+        function detect(a) {
+            console.log('detect 方法', index , a)
+           
+        }
+        class App extends React.Component {
+            constructor(props) {
+                super(props)
+                this.handleClick = this.handleClick.bind(this)
+            }
+            handleClick() {
+                index = 0
+                this.forceUpdate()
+                setTimeout(function(){
+                    console.log('应该输出', str)
+                })
+            }
+            render() {
+                return index ?
+                    <div ref='a' onClick={this.handleClick.bind(this)}>
+                        <Component1>
+                            <p ref={detect}>这是子节点(移除节点测试1)</p>
+                            <Component2 />
+                        </Component1>
+                    </div> : <div>文本节点</div>
+
+            }
+        };
+
+    var s
+              
       
        window.onload = function(){
-           ReactDOM.render(<App />, document.getElementById('example'))
+         s = ReactDOM.render(<App />, document.getElementById('example'))
        }
        </script>
 </head>
