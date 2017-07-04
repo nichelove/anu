@@ -24,56 +24,77 @@
    <script src="./libs/babel.js"></script>
     <script type='text/babel'>
  var str = ''
-        class Component1 extends React.Component {
-            componentWillUnmount() {
-                str += 'xxxx'
+        class Select extends React.Component {
+            constructor() {
+                super()
+                this.state = {
+                    city: "hj",
+                    cities: [
+                        {
+                            value: 'bj',
+                            text: '北京'
+                        }, {
+                            value: 'hj',
+                            text: '杭州'
+                        }, {
+                            value: 'nj',
+                            text: '南京'
+                        }
+                    ]
+                }
             }
-            render() {
-                return <div className="component1">{this.props.children}</div>
-            }
-        }
-        class Component2 extends React.Component {
-            componentWillUnmount() {
-                str += ' yyyy'
-            }
-            render() {
-                return <div className="component2">xxx</div>
-            }
-        }
-        var index = 1
-        function detect(a) {
-            console.log('detect 方法', index , a)
-           
-        }
-        class App extends React.Component {
-            constructor(props) {
-                super(props)
-                this.handleClick = this.handleClick.bind(this)
-            }
-            handleClick() {
-                index = 0
-                this.forceUpdate()
-                setTimeout(function(){
-                    console.log('应该输出', str)
+            change() {
+                this.setState({
+                    cities: [
+                        {
+                            value: 'sj',
+                            text: '三江'
+                        },
+                        {
+                            value: 'hj',
+                            text: '杭州'
+                        }, {
+                            value: 'nj',
+                            text: '南京'
+                        }, {
+                            value: 'bj',
+                            text: '北京'
+                        }, {
+                            value: 'ly',
+                            text: '洛阳'
+                        }
+                    ]
                 })
             }
-            render() {
-                return index ?
-                    <div ref='a' onClick={this.handleClick.bind(this)}>
-                        <Component1>
-                            <p ref={detect}>这是子节点(移除节点测试1)</p>
-                            <Component2 />
-                        </Component1>
-                    </div> : <div>文本节点</div>
-
+            handleCity(e) {
+                var value = e.target.value;
+                this.setState({ city: value })
             }
-        };
-
+            render() {
+                return <select
+                    name='city'
+                    id="node3"
+                    value={this.state.city}
+                    onChange={this
+                        .handleCity
+                        .bind(this)}>
+                    {this
+                        .state
+                        .cities
+                        .map(function (el) {
+                            return <option value={el.value} key={el.value}>{el.text}</option>
+                        })
+                    }
+                </select>
+            }
+        }
+        ;
+     
     var s
               
       
        window.onload = function(){
-         s = ReactDOM.render(<App />, document.getElementById('example'))
+         s = ReactDOM.render(<Select />, document.getElementById('example'))
        }
        </script>
 </head>

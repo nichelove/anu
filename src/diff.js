@@ -1,6 +1,14 @@
-import { diffProps } from "./diffProps";
-import { CurrentOwner } from "./createElement";
-import { createDOMElement, removeDOMElement, getNs } from "./browser";
+import {
+  diffProps
+} from "./diffProps";
+import {
+  CurrentOwner
+} from "./createElement";
+import {
+  createDOMElement,
+  removeDOMElement,
+  getNs
+} from "./browser";
 
 import {
   processFormElement,
@@ -18,9 +26,13 @@ import {
   __push
 } from "./util";
 
-import { instanceMap } from "./instanceMap";
+import {
+  instanceMap
+} from "./instanceMap";
 
-import { scheduler } from "./scheduler";
+import {
+  scheduler
+} from "./scheduler";
 /**
  * ReactDOM.render 方法
  *
@@ -98,7 +110,8 @@ function genVnodes(vnode, container, hostParent, parentContext) {
   var nodes = getNodes(container);
   var prevRendered = null;
   //eslint-disable-next-line
-  for (var i = 0, el; (el = nodes[i++]); ) {
+  for (var i = 0, el;
+    (el = nodes[i++]);) {
     if (el.getAttribute && el.getAttribute("data-reactroot") !== null) {
       prevRendered = el;
     } else {
@@ -114,7 +127,9 @@ function genVnodes(vnode, container, hostParent, parentContext) {
 }
 
 export function mountVnode(vnode, parentContext, prevRendered) {
-  let { vtype } = vnode;
+  let {
+    vtype
+  } = vnode;
   switch (vtype) {
     case 1:
       return mountElement(vnode, parentContext, prevRendered);
@@ -124,9 +139,9 @@ export function mountVnode(vnode, parentContext, prevRendered) {
       return mountStateless(vnode, parentContext, prevRendered);
     default:
       var node =
-        prevRendered && prevRendered.nodeName === vnode.type
-          ? prevRendered
-          : createDOMElement(vnode);
+        prevRendered && prevRendered.nodeName === vnode.type ?
+        prevRendered :
+        createDOMElement(vnode);
       vnode._hostNode = node;
       return node;
   }
@@ -155,7 +170,10 @@ function genMountElement(vnode, type, prevRendered) {
 }
 
 function mountElement(vnode, parentContext, prevRendered) {
-  let { type, props } = vnode;
+  let {
+    type,
+    props
+  } = vnode;
   let dom = genMountElement(vnode, type, prevRendered);
 
   vnode._hostNode = dom;
@@ -169,7 +187,7 @@ function mountElement(vnode, parentContext, prevRendered) {
   }
 
   if (vnode.ref) {
-    scheduler.add(function() {
+    scheduler.add(function () {
       vnode.ref(dom);
     });
   }
@@ -209,7 +227,9 @@ function alignChildren(vnode, parentNode, parentContext, childNodes) {
 }
 
 function mountComponent(vnode, parentContext, prevRendered) {
-  let { type } = vnode;
+  let {
+    type
+  } = vnode;
 
   var props = getComponentProps(vnode);
 
@@ -252,7 +272,7 @@ function mountComponent(vnode, parentContext, prevRendered) {
     }
   }
   if (vnode.ref) {
-    scheduler.add(function() {
+    scheduler.add(function () {
       vnode.ref(instance);
     });
   }
@@ -312,7 +332,7 @@ function refreshComponent(instance) {
   reRenderComponent(instance);
 
   instance._forceUpdate = false;
-  instance._pendingCallbacks.forEach(function(fn) {
+  instance._pendingCallbacks.forEach(function (fn) {
     fn.call(instance);
   });
   instance._pendingCallbacks.length = 0;
@@ -325,15 +345,21 @@ function reRenderComponent(instance) {
   var node = instanceMap.get(instance);
 
   if (!instance._hasDidMount) {
-    scheduler.add(function() {
-      setTimeout(function() {
+    scheduler.add(function () {
+      setTimeout(function () {
         refreshComponent(instance);
       });
     });
     scheduler.run();
     return node;
   }
-  var { props, state, context, lastProps, constructor } = instance;
+  var {
+    props,
+    state,
+    context,
+    lastProps,
+    constructor
+  } = instance;
 
   var lastRendered = instance._rendered;
   var hostParent = lastRendered._hostParent;
@@ -344,8 +370,7 @@ function reRenderComponent(instance) {
   instance.props = lastProps;
   // delete instance.lastProps
   // 生命周期 shouldComponentUpdate(nextProps, nextState, nextContext)
-  if (
-    !instance._forceUpdate &&
+  if (!instance._forceUpdate &&
     instance.shouldComponentUpdate &&
     instance.shouldComponentUpdate(nextProps, nextState, context) === false
   ) {
@@ -385,13 +410,11 @@ export function alignVnodes(vnode, newVnode, node, parentContext) {
   if (newVnode == null) {
     removeDOMElement(node);
     disposeVnode(vnode);
-  } else if (
-    !(
+  } else if (!(
       vnode.type == newVnode.type &&
       vnode.key === newVnode.key &&
       vnode._deep === newVnode._deep
-    )
-  ) {
+    )) {
     //replace
     disposeVnode(vnode);
     newNode = mountVnode(newVnode, parentContext);
@@ -442,7 +465,9 @@ export function findDOMNode(componentOrElement) {
 }
 
 function disposeElement(vnode) {
-  var { props } = vnode;
+  var {
+    props
+  } = vnode;
   var children = props.children;
   // var childNodes = node.childNodes;
   for (let i = 0, len = children.length; i < len; i++) {
@@ -544,27 +569,33 @@ function updateComponent(lastVnode, nextVnode, node, parentContext) {
 
 function patchVnode(vnode, nextVnode, parentContext) {
   var dom = vnode._hostNode;
+
   if (vnode !== nextVnode) {
+    if(!dom)
+      return dom
+   
+    nextVnode._hostParent = vnode._hostParent
     // same type and same key -> update
     if (!vnode.vtype) {
       if (vnode.text !== nextVnode.text) {
         dom.nodeValue = nextVnode.text;
         nextVnode._hostNode = dom
       }
-    } else if (vnode.vtype === 1) {
-      updateElement(vnode, nextVnode, dom, parentContext);
-    } else if (vnode.vtype === 4) {
-      dom = updateStateless(vnode, nextVnode, dom, parentContext);
-    } else if (vnode.vtype === 2) {
-      dom = updateComponent(vnode, nextVnode, dom, parentContext);
+
+    } else {
+      dom = updateVnode(vnode, nextVnode, dom, parentContext);
+
     }
+
   }
-  return dom;
+  return dom
 }
 
 function sameVnode(a, b) {
+  console.log(a.key, b.key,a,b)
   return a.type === b.type && a.key === b.key;
 }
+
 function updateChildren(vnode, newVnode, parentNode, parentContext) {
   let oldChildren = vnode.props.children;
   let newChildren = newVnode.props.children;
@@ -580,10 +611,10 @@ function updateChildren(vnode, newVnode, parentNode, parentContext) {
   let idxInOld;
   let elmToMove;
   let before;
-
+console.log('-----')
   while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
     if (oldStartVnode == null) {
-      oldStartVnode = oldChildren[++oldStartIdx]; // Vnode might have been moved left
+      oldStartVnode = oldChildren[++oldStartIdx];
     } else if (oldEndVnode == null) {
       oldEndVnode = oldChildren[--oldEndIdx];
     } else if (newStartVnode == null) {
@@ -616,12 +647,16 @@ function updateChildren(vnode, newVnode, parentNode, parentContext) {
       oldEndVnode = oldChildren[--oldEndIdx];
       newStartVnode = newChildren[++newStartIdx];
     } else {
+console.log(keyHash,'000')
       if (keyHash === undefined) {
         keyHash = createKeyToOldIdx(oldChildren, oldStartIdx, oldEndIdx);
+        
       }
+       newStartVnode._hostParent = newVnode
       idxInOld = keyHash[newStartVnode.key];
       if (!idxInOld && idxInOld !== 0) {
         // New element
+       
         parentNode.insertBefore(
           mountVnode(newStartVnode, parentContext),
           oldStartVnode._hostNode
@@ -644,10 +679,11 @@ function updateChildren(vnode, newVnode, parentNode, parentContext) {
     }
   }
   if (oldStartIdx > oldEndIdx) {
+
     before =
-      newChildren[newEndIdx + 1] == null
-        ? null
-        : newChildren[newEndIdx + 1]._hostNode;
+      newChildren[newEndIdx + 1] == null ?
+      null :
+      newChildren[newEndIdx + 1]._hostNode;
     addVnodes(
       parentNode,
       before,
@@ -660,18 +696,21 @@ function updateChildren(vnode, newVnode, parentNode, parentContext) {
     removeVnodes(parentNode, oldChildren, oldStartIdx, oldEndIdx);
   }
 }
+
 function createKeyToOldIdx(children, beginIdx, endIdx) {
-    var i, map = {}, key, ch;
-    for (i = beginIdx; i <= endIdx; ++i) {
-        ch = children[i];
-        if (ch != null) {
-            key = ch.key;
-            if (key !== undefined)
-                map[key] = i;
-        }
+  var i, map = {},
+    key, ch;
+  for (i = beginIdx; i <= endIdx; ++i) {
+    ch = children[i];
+    if (ch != null) {
+      key = ch.key;
+      if (key !== undefined)
+        map[key] = i;
     }
-    return map;
+  }
+  return map;
 }
+
 function removeVnodes(parentNode, vnodes, startIdx, endIdx) {
   for (; startIdx <= endIdx; ++startIdx) {
     var vnode = vnodes[startIdx]
