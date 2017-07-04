@@ -117,10 +117,8 @@ function getDOMNode() {
 }
 export function __ref(dom) {
   var instance = this._owner;
-  if (dom) {
+  if (dom && instance) {
     dom.getDOMNode = getDOMNode;
-  }
-  if (instance) {
     instance.refs[this.__refKey] = dom;
   }
 }

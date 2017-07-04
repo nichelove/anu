@@ -1,5 +1,5 @@
 /**
- * by 司徒正美 Copyright 2017-07-03T17:00:11.984Z
+ * by 司徒正美 Copyright 2017-07-04T14:25:00.781Z
  */
 
 (function (global, factory) {
@@ -278,10 +278,8 @@ function getDOMNode() {
 }
 function __ref(dom) {
   var instance = this._owner;
-  if (dom) {
+  if (dom && instance) {
     dom.getDOMNode = getDOMNode;
-  }
-  if (instance) {
     instance.refs[this.__refKey] = dom;
   }
 }
@@ -368,12 +366,14 @@ var scheduler = {
         instance._updating = false;
         instance._hasDidMount = true;
 
-        if (instance._pendingStates.length) if (!instance._asyncUpdating) {
+        if (instance._pendingStates.length && !instance._asyncUpdating) {
           instance._asyncUpdating = true;
           var timeoutID = setTimeout(function () {
             clearTimeout(timeoutID);
             instance._asyncUpdating = false;
-            options.refreshComponent(instance);
+            if (!instance._disableSetState) {
+              options.refreshComponent(instance);
+            }
             //处理componentDidMount产生的回调
           }, 0);
         }
@@ -592,6 +592,7 @@ function removeDOMElement(node) {
   fragment.appendChild(node);
   fragment.removeChild(node);
   var nodeName = node.__n || (node.__n = toLowerCase(node.nodeName));
+  node.__events = null;
   if (recyclables[nodeName] && recyclables[nodeName].length < 72) {
     recyclables[nodeName].push(node);
   } else {
@@ -757,10 +758,20 @@ function addGlobalEventListener(name) {
   }
 }
 
+var supportsPassive = false;
+try {
+  var opts = Object.defineProperty({}, 'passive', {
+    get: function get() {
+      supportsPassive = true;
+    }
+  });
+  document.addEventListener("test", null, opts);
+} catch (e) {}
+
 function addEvent(el, type, fn) {
   if (el.addEventListener) {
     //Unable to preventDefault inside passive event listener due to target being treated as passive
-    el.addEventListener(type, fn, supportsPassive ? { passive: true } : false);
+    el.addEventListener(type, fn, supportsPassive ? { passive: false } : false);
   } else if (el.attachEvent) {
     el.attachEvent("on" + type, fn);
   }
@@ -779,15 +790,6 @@ function getBrowserName(onStr) {
   eventCamelCache[lower] = camel;
   return lower;
 }
-var supportsPassive = false;
-try {
-  var opts = Object.defineProperty({}, 'passive', {
-    get: function get() {
-      supportsPassive = true;
-    }
-  });
-  window.addEventListener("test", null, opts);
-} catch (e) {}
 
 addEvent.fire = function fire(dom, name, opts) {
   var hackEvent = document.createEvent("Events");
@@ -1402,6 +1404,68 @@ try {
 
 var instanceMap = new innerMap();
 
+function disposeVnode(vnode) {
+  if (!vnode) {
+    console.warn("in `disposeVnode` method, vnode is undefined", vnode);
+    return;
+  }
+  switch (vnode.vtype) {
+    case 1:
+      disposeElement(vnode);
+      break;
+    case 2:
+      disposeComponent(vnode);
+      break;
+    case 4:
+      disposeStateless(vnode);
+      break;
+    default:
+      vnode._disposed = true;
+      vnode._hostNode = null;
+      vnode._hostParent = null;
+      break;
+  }
+}
+function disposeStateless(vnode) {
+  vnode._disposed = true;
+  disposeVnode(vnode._instance._rendered);
+  vnode._instance = null;
+}
+
+function disposeElement(vnode) {
+  var props = vnode.props;
+
+  var children = props.children;
+  // var childNodes = node.childNodes;
+  for (var i = 0, len = children.length; i < len; i++) {
+    disposeVnode(children[i]);
+  }
+  //eslint-disable-next-line
+  vnode.ref && vnode.ref(null);
+  vnode._hostNode = null;
+  vnode._hostParent = null;
+}
+
+function disposeComponent(vnode) {
+  if (!vnode._instance) return;
+  var instance = vnode._instance;
+  vnode._disposed = true;
+  var instance = vnode._instance;
+  if (instance) {
+    //在执行componentWillUnmount后才将关联的元素节点解绑，防止用户在钩子里调用
+    //findDOMNode方法
+    instance._disableSetState = true;
+    instanceMap["delete"](instance);
+    var node = instanceMap.get(instance);
+    if (node) {
+      node._component = null;
+      instanceMap["delete"](instance);
+    }
+    vnode._instance = instance._currentElement = null;
+    disposeVnode(instance._rendered);
+  }
+}
+
 /**
  * ReactDOM.render 方法
  *
@@ -1432,7 +1496,8 @@ function updateView(vnode, container, callback, parentContext) {
     throw new Error(vnode + "\u5FC5\u987B\u4E3A\u7EC4\u4EF6\u6216\u5143\u7D20\u8282\u70B9, \u4F46\u73B0\u5728\u4F60\u7684\u7C7B\u578B\u5374\u662F" + Object.prototype.toString.call(vnode));
   }
   if (!container || container.nodeType !== 1) {
-    throw new Error(container + "\u5FC5\u987B\u4E3A\u5143\u7D20\u8282\u70B9");
+    console.warn(container + "\u5FC5\u987B\u4E3A\u5143\u7D20\u8282\u70B9");
+    return;
   }
   var prevVnode = container._component,
       rootNode,
@@ -1666,12 +1731,6 @@ function updateStateless(lastVnode, nextVnode, node, parentContext) {
   return dom;
 }
 
-function disposeStateless(vnode) {
-  vnode._disposed = true;
-  disposeVnode(vnode._instance._rendered);
-  vnode._instance = null;
-}
-
 function refreshComponent(instance) {
   //这里触发视图更新
 
@@ -1769,28 +1828,6 @@ function alignVnodes(vnode, newVnode, node, parentContext) {
   return newNode;
 }
 
-function disposeVnode(vnode) {
-  if (!vnode) {
-    console.warn("in `disposeVnode` method, vnode is undefined", vnode);
-    return;
-  }
-  switch (vnode.vtype) {
-    case 1:
-      disposeElement(vnode);
-      break;
-    case 2:
-      disposeComponent(vnode);
-      break;
-    case 4:
-      disposeStateless(vnode);
-      break;
-    default:
-      vnode._disposed = true;
-      vnode._hostNode = null;
-      vnode._hostParent = null;
-      break;
-  }
-}
 function findDOMNode(componentOrElement) {
   if (componentOrElement == null) {
     return null;
@@ -1800,35 +1837,6 @@ function findDOMNode(componentOrElement) {
   }
 
   return instanceMap.get(componentOrElement) || null;
-}
-
-function disposeElement(vnode) {
-  var props = vnode.props;
-
-  var children = props.children;
-  // var childNodes = node.childNodes;
-  for (var i = 0, len = children.length; i < len; i++) {
-    disposeVnode(children[i]);
-  }
-  //eslint-disable-next-line
-  vnode.ref && vnode.ref(null);
-  vnode._hostNode = null;
-  vnode._hostParent = null;
-}
-
-function disposeComponent(vnode) {
-  if (!vnode._instance) return;
-  var instance = vnode._instance;
-  vnode._disposed = true;
-  var instance = vnode._instance;
-  if (instance) {
-    if (instance.componentWillUnmount) {
-      instance.componentWillUnmount();
-    }
-    instanceMap["delete"](instance);
-    vnode._instance = instance._currentElement = instance.props = null;
-    disposeVnode(instance._rendered);
-  }
 }
 
 function updateVnode(lastVnode, nextVnode, node, parentContext) {
@@ -1925,7 +1933,6 @@ function patchVnode(vnode, nextVnode, parentContext) {
 }
 
 function sameVnode(a, b) {
-  console.log(a.key, b.key, a, b);
   return a.type === b.type && a.key === b.key;
 }
 
@@ -1944,7 +1951,7 @@ function updateChildren(vnode, newVnode, parentNode, parentContext) {
   var idxInOld = void 0;
   var elmToMove = void 0;
   var before = void 0;
-  console.log('-----');
+
   while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
     if (oldStartVnode == null) {
       oldStartVnode = oldChildren[++oldStartIdx];
@@ -1977,7 +1984,7 @@ function updateChildren(vnode, newVnode, parentNode, parentContext) {
       oldEndVnode = oldChildren[--oldEndIdx];
       newStartVnode = newChildren[++newStartIdx];
     } else {
-      console.log(keyHash, '000');
+
       if (keyHash === undefined) {
         keyHash = createKeyToOldIdx(oldChildren, oldStartIdx, oldEndIdx);
       }
