@@ -20,30 +20,81 @@
     <script src="./dist/React.js"></script>
   <!-- <script src="./test/react.js"></script>
     <script src="./test/react-dom.js"></script>-->
-  <script src="./libs/babel.js"></script>  <script type='text/babel'>
-  	class Comp extends React.Component {
-			render() {
-				return <span>span in a component</span>;
-			}
-		}
-		let root, div
-		function test(content) {
-			root = React.render(content, div);
-            console.log(div.innerHTML)
-		}
-
-		
-  
-  var s 
+  <script src="./libs/babel.js"></script>  
+  <script type='text/babel'>
+  var s
+  class App extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          path: "111"
+        };
+      }
+      change(path) {
+        this.setState({
+          path: path || "333"
+        });
+      }
+      render() {
+        return <div><span>xx</span><Route path={this.state.path} /></div>;
+      }
+    }
+    var updateCount = 0;
+    var receiveCount = 0;
+    var destroyCount = 0;
+    class Route extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          path: props.path
+        };
+      }
+      componentWillReceiveProps(props) {
+        receiveCount++;
+        console.log('receiveCount',receiveCount)
+        this.setState(function(nextState, props) {
+          nextState.path = props.path;
+          return nextState;
+        });
+      }
+      componentWillUpdate() {
+        updateCount++;
+        console.log('updateCount',updateCount)
+      }
+      componentWillUnmount() {
+        destroyCount++;
+        console.log("destroyCount",destroyCount)
+      }
+      render() {
+        return this.state.path == "111" ? <p>{this.state.path}</p> : null;
+      }
+    }
+function expect(a){
+    return {
+        toBe: function(b){
+            console.log(a, b, a === b)
+        }
+    }
+}
   window.onload = function(){
-      div =  document.getElementById('example')
-      test(<Comp />);
+     var  div =  document.getElementById('example')
+     s = React.render(<App />, div);
+      expect(updateCount).toBe(0);
+      expect(receiveCount).toBe(0);
       setTimeout(function(){
-          test(<div>just a div</div>);
-      }, 300)
-      setTimeout(function(){
-          test(<Comp />);
-      }, 600)
+        s.change("111");
+        setTimeout(function(){
+            expect(updateCount).toBe(1);
+            expect(receiveCount).toBe(1);
+            console.log('---------------')
+            s.change("111x");
+            setTimeout(function(){
+              expect(updateCount).toBe(2);
+              expect(receiveCount).toBe(2);
+           },200)
+        },200)
+        
+    },200)
   }
     </script>
 </head>
@@ -51,7 +102,6 @@
 <body>
 
     <div id='example'>ddd</div>
-    <div id='ok'><span>111</span><span>222</span><span>333</span><span>444</span></div>
 
 </body>
 

@@ -413,8 +413,7 @@ export function alignVnodes(vnode, newVnode, node, parentContext) {
     disposeVnode(vnode);
   } else if (!(
       vnode.type == newVnode.type &&
-      vnode.key === newVnode.key &&
-      vnode._deep === newVnode._deep
+      vnode.key === newVnode.key 
     )) {
     //replace
     disposeVnode(vnode);
@@ -533,16 +532,22 @@ function patchVnode(vnode, nextVnode, parentContext) {
       }
 
     } else {
+      
       dom = updateVnode(vnode, nextVnode, dom, parentContext);
-
+      nextVnode._hostNode = dom
     }
 
   }
   return dom
 }
-
+function getT(a){
+  return typeof a.type === 'string' ? a.type: a.type.name
+}
 function sameVnode(a, b) {
-  return a.type === b.type && a.key === b.key;
+  
+   var t =  a.type === b.type && a.key === b.key;
+  // console.log(t, getT(a), getT(b))
+   return t
 }
 
 function updateChildren(vnode, newVnode, parentNode, parentContext) {

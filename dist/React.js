@@ -1,5 +1,5 @@
 /**
- * by 司徒正美 Copyright 2017-07-04T14:25:00.781Z
+ * by 司徒正美 Copyright 2017-07-04T15:33:13.960Z
  */
 
 (function (global, factory) {
@@ -1405,65 +1405,64 @@ try {
 var instanceMap = new innerMap();
 
 function disposeVnode(vnode) {
-  if (!vnode) {
-    console.warn("in `disposeVnode` method, vnode is undefined", vnode);
-    return;
-  }
-  switch (vnode.vtype) {
-    case 1:
-      disposeElement(vnode);
-      break;
-    case 2:
-      disposeComponent(vnode);
-      break;
-    case 4:
-      disposeStateless(vnode);
-      break;
-    default:
-      vnode._disposed = true;
-      vnode._hostNode = null;
-      vnode._hostParent = null;
-      break;
-  }
+    if (!vnode) {
+        console.warn("in `disposeVnode` method, vnode is undefined", vnode);
+        return;
+    }
+    switch (vnode.vtype) {
+        case 1:
+            disposeElement(vnode);
+            break;
+        case 2:
+            disposeComponent(vnode);
+            break;
+        case 4:
+            disposeStateless(vnode);
+            break;
+        default:
+            vnode._disposed = true;
+            vnode._hostNode = null;
+            vnode._hostParent = null;
+            break;
+    }
 }
 function disposeStateless(vnode) {
-  vnode._disposed = true;
-  disposeVnode(vnode._instance._rendered);
-  vnode._instance = null;
+    vnode._disposed = true;
+    disposeVnode(vnode._instance._rendered);
+    vnode._instance = null;
 }
 
 function disposeElement(vnode) {
-  var props = vnode.props;
+    var props = vnode.props;
 
-  var children = props.children;
-  // var childNodes = node.childNodes;
-  for (var i = 0, len = children.length; i < len; i++) {
-    disposeVnode(children[i]);
-  }
-  //eslint-disable-next-line
-  vnode.ref && vnode.ref(null);
-  vnode._hostNode = null;
-  vnode._hostParent = null;
+    var children = props.children;
+    // var childNodes = node.childNodes;
+    for (var i = 0, len = children.length; i < len; i++) {
+        disposeVnode(children[i]);
+    }
+    //eslint-disable-next-line
+    vnode.ref && vnode.ref(null);
+    vnode._hostNode = null;
+    vnode._hostParent = null;
 }
 
 function disposeComponent(vnode) {
-  if (!vnode._instance) return;
-  var instance = vnode._instance;
-  vnode._disposed = true;
-  var instance = vnode._instance;
-  if (instance) {
-    //在执行componentWillUnmount后才将关联的元素节点解绑，防止用户在钩子里调用
-    //findDOMNode方法
-    instance._disableSetState = true;
-    instanceMap["delete"](instance);
-    var node = instanceMap.get(instance);
-    if (node) {
-      node._component = null;
-      instanceMap["delete"](instance);
+    var instance = vnode._instance;
+    if (instance) {
+        vnode._disposed = true;
+        instance._disableSetState = true;
+        if (instance.componentWillUnmount) {
+            instance.componentWillUnmount();
+        }
+        //在执行componentWillUnmount后才将关联的元素节点解绑，防止用户在钩子里调用 findDOMNode方法
+        var node = instanceMap.get(instance);
+        if (node) {
+            node._component = null;
+            instanceMap["delete"](instance);
+        }
+        vnode._instance = instance._currentElement = null;
+        disposeVnode(instance._rendered);
     }
-    vnode._instance = instance._currentElement = null;
-    disposeVnode(instance._rendered);
-  }
 }
 
 /**
@@ -1811,7 +1810,7 @@ function alignVnodes(vnode, newVnode, node, parentContext) {
   if (newVnode == null) {
     removeDOMElement(node);
     disposeVnode(vnode);
-  } else if (!(vnode.type == newVnode.type && vnode.key === newVnode.key && vnode._deep === newVnode._deep)) {
+  } else if (!(vnode.type == newVnode.type && vnode.key === newVnode.key)) {
     //replace
     disposeVnode(vnode);
     newNode = mountVnode(newVnode, parentContext);
@@ -1926,14 +1925,18 @@ function patchVnode(vnode, nextVnode, parentContext) {
         nextVnode._hostNode = dom;
       }
     } else {
+
       dom = updateVnode(vnode, nextVnode, dom, parentContext);
+      nextVnode._hostNode = dom;
     }
   }
   return dom;
 }
-
 function sameVnode(a, b) {
-  return a.type === b.type && a.key === b.key;
+
+  var t = a.type === b.type && a.key === b.key;
+  // console.log(t, getT(a), getT(b))
+  return t;
 }
 
 function updateChildren(vnode, newVnode, parentNode, parentContext) {

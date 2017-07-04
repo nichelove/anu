@@ -45,9 +45,11 @@ function disposeComponent(vnode) {
     var instance = vnode._instance;
     if (instance) {
         vnode._disposed = true;
-        //在执行componentWillUnmount后才将关联的元素节点解绑，防止用户在钩子里调用 findDOMNode方法
         instance._disableSetState = true;
-        instanceMap["delete"](instance);
+        if (instance.componentWillUnmount) {
+            instance.componentWillUnmount();
+        }
+        //在执行componentWillUnmount后才将关联的元素节点解绑，防止用户在钩子里调用 findDOMNode方法
         var node = instanceMap.get(instance);
         if (node) {
             node._component = null;
