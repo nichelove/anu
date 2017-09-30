@@ -4,80 +4,85 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">   
+    <script type='text/javascript' src="./lib/shallowCompare.js"></script>
+    
    <script type='text/javascript' src="./dist/React.js"></script>
-
- <!--<script type='text/javascript' src="./test/react.js"></script>
-   <script type='text/javascript' src="./test/react-dom.js"></script>-->
+ 
+ <!-- <script type='text/javascript' src="./test/react.js"></script>
+ <script type='text/javascript' src="./test/react-dom.js"></script>-->
+   <!--<script type='text/javascript' src="./test/react-lite.js"></script>-->
+  <!-- <script type='text/javascript' src="./test/react-lite.js"></script>-->
      <script type='text/javascript' src="./lib/babel.js"></script>
     
   <script type='text/babel'>
   var s
   window.onload = function(){
-    var arr = ['111', '222', '333']
-    var div = document.body
-    class App extends React.Component {
-
-        getChildContext() {
-            return {
-                name: "Jonas",
-                fruit: "Banana"
-            };
-        }
-        handleClick() {
-            this.getChildContext = function () {
-                return {
-                    name: "Jonas",
-                    fruit: arr.shift() 
-                };
+   
+    var container = document.getElementById("example")
+   // var PropTypes = React.PropTypes
+    if(!window.ReactDOM){
+      window.ReactDOM = window.React
+    }
+    var expect = function(a) {
+        return {
+            toBe: function(b) {
+                console.log(a, b, a === b)
             }
-            this.forceUpdate()
-
-        }
-        render() {
-            return <div ref='a' onClick={this.handleClick.bind(this)}><h4>{new Date - 0}</h4><B /></div>;
         }
     }
-    App.childContextTypes = {
-        name: React.PropTypes.string,
-        fruit: React.PropTypes.string
+   
+    
+    function getInitialState() {
+      return {
+        foo: [1, 2, 3],
+        bar: {a: 4, b: 5, c: 6},
+      };
     }
 
-    class B extends React.Component {
+    var renderCalls = 0;
+    var initialSettings = getInitialState();
 
-        render() {
-            console.log("B", this.context.fruit)
-            return <div><C /><strong>{this.context.fruit}</strong></div>;
-        }
-    }
-    B.contextTypes = {
-        fruit: React.PropTypes.string
-    }
-    class C extends React.Component {
-        render() {
-            console.log("C", this.context.fruit)
-            return <em>{this.context.fruit}</em>;
-        }
+    class Component extends React.Component {
+      state = initialSettings;
+
+      shouldComponentUpdate(nextProps, nextState) {
+        return shallowCompare(this, nextProps, nextState);
+      }
+
+      render() {
+        renderCalls++;
+        return <div />;
+      }
     }
 
-   s = ReactDOM.render(<App />, div)
-    /*
-    await browser
-        .pause(100)
-        .$apply()
-    var strongs = div.getElementsByTagName('strong')
-    expect(strongs[0].innerHTML).toBe('Banana')
-    expect(strongs[1].innerHTML).toBe('Banana')
-    await browser.click(s.refs.a).pause(100)
-        .$apply()
-    strongs = div.getElementsByTagName('strong')
-    expect(strongs[0].innerHTML).toBe('111')
-    expect(strongs[1].innerHTML).toBe('111')
-    await browser.click(s.refs.a).pause(100)
-        .$apply()
-    strongs = div.getElementsByTagName('strong')
-    expect(strongs[0].innerHTML).toBe('222')
-    expect(strongs[1].innerHTML).toBe('222')
-    */
+   // var container = document.createElement('div');
+    var instance = ReactDOM.render(<Component />, container);
+    expect(renderCalls).toBe(1);
+
+    // Do not re-render if state is equal
+    var settings = {
+      foo: initialSettings.foo,
+      bar: initialSettings.bar,
+    };
+    
+    initialSettings.foo.xx = 1
+    instance.setState(settings);
+    expect(renderCalls).toBe(1);
+   
+    // Re-render because one field changed
+    initialSettings.foo = [1, 2, 3, 4];
+    instance.setState(initialSettings);
+
+
+    expect(renderCalls).toBe(2);
+
+    // Re-render because the object changed
+    instance.setState(getInitialState());
+    expect(renderCalls).toBe(3);
+
+
+ 
+
  
   }
   </script>
@@ -86,6 +91,15 @@
 <body>
     
         <div>开发者工具</div>
+        <pre>
+          A componentWillMount
+          A render
+          A componentDidMount
+          A componentWillUnmount
+          B componentWillMount
+          B render
+          B componentDidMount
+        </pre>
         <div id='example'></div>
     
     

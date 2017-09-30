@@ -46,3 +46,4 @@ fs.writeFileSync(dir4, text4, { encoding: "utf8" });
 //fs.writeFileSync( path.join(__dirname, "../../antd-test/node_modules/anujs/dist/ReactSelection.js"), text2, { encoding: "utf8" });
 
 console.log("对ReactSelection瘦身完毕"); // eslint-disable-line
+

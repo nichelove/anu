@@ -4,37 +4,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">   
-  <!--<script src="./coverage/react.development.js"></script>-->
-  <script type='text/javascript' src="./dist/ReactSelection.js"></script>
+    <script type='text/javascript' src="./dist/React.js"></script>
+    <!--<script type='text/javascript' src="./test/react.js"></script>
+    <script type='text/javascript' src="./test/react-dom.js"></script>-->
+    <!-- <script src="./test/react-lite.js"></script>-->
+    <script type='text/javascript' src="./lib/babel.js"></script>
 
-   <!--<script src="./test/react-lite.js"></script>-->
-     <script type='text/javascript' src="./lib/babel.js"></script>
 
-  <script type='text/babel'>
-class App extends React.Component {
-  constructor(props){
-    super(props)
-    this.state = {
-      value: 111
-    }
-  }
-  change(e){
-    console.log(e.target.innerHTML)
-
-    this.setState({
-      value: e.target.innerHTML 
-   })
-  }
-  render(){
-    return (
-        <div contentEditable={true} onInput={ this.change.bind(this) } >{this.state.value}
-        </div>
-    );
-  }
-}
-ReactDOM.render(<App />,  document.getElementById('example'))
- 
-  </script>
 
 </head>
 
@@ -43,7 +19,39 @@ ReactDOM.render(<App />,  document.getElementById('example'))
     <div>开发者工具</div>
     <div id='example'></div>
 
-  
+    <script type='text/babel'>
+
+  if(!window.ReactDOM){
+    window.ReactDOM = window.React
+  }
+
+  var container = document.createElement('div');
+  document.body.appendChild(container);
+      const log = [];
+      class Component extends React.Component {
+        constructor(props){
+           super(props)
+           this.state = {
+             a: 1
+           }
+        }
+        render() {
+          return <div />;
+        }
+      }
+      
+      var a = new Component()
+      var oldState =  a.state
+      var newState = {
+        a: 2
+      }
+      a.setState(newState)
+      console.log(oldState == a.state)
+      console.log(newState == a.state)
+
+
+      
+       </script>
 </body>
 
 </html>
